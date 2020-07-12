@@ -183,11 +183,14 @@ installArgoCd() {
     waitForCsv $namespace
     kubectl rollout status -w deployment/argocd-operator --namespace="${namespace}"
     genArgoCdConfiguration $namespace | kubectl apply -f -
-    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
-    sleep 5
-    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
-    sleep 5
-    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
+    # Hack - rollout status initially fails because it's called before the deployment is created
+    local retries=10
+    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}"
+    until [[ $retries == 0 || $? == 0 ]]; do
+        sleep 1
+        retries=$((retries - 1))
+        kubectl rollout status -w deployment/argocd-server --namespace="${namespace}"
+    done
 }
 
 # Environment variables (names with LC_* can be passed through SSH in most default configurations)
