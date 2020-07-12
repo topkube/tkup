@@ -186,6 +186,10 @@ installArgoCd() {
 # LC_TK_GITOPS_PRIV_KEY (multi-line)
 # LC_TK_GITOPS_KNOWN_HOSTS (multi-line)
 
+echo ==START ENVIRON==
+env
+echo ==ENV ENVIRON==
+
 installOlm
 installArgoCd
 
