@@ -178,7 +178,7 @@ installArgoCd() {
     genArgoCdConfiguration $namespace | kubectl apply -f -
 }
 
-# Environment variables
+# Environment variables (names with LC_* can be passed through SSH in most default configurations)
 # LC_TK_OLM_VERSION
 # LC_TK_GITOPS_URL
 # LC_TK_GITOPS_USERNAME
