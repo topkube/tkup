@@ -4,20 +4,21 @@ set -e
 waitForCsv() {
     local namespace=$1
     local name=$2
+    local displayname=$([ -z "$name" ] && echo "namespace \"$namespace\"" || echo "\"$name\"")
     local retries=50
     local jsonpath=$([ -z "$name" ] && echo "{.items[0].status.phase}" || echo "{.status.phase}")
     until [[ $retries == 0 || $new_csv_phase == "Succeeded" ]]; do
-        local new_csv_phase=$(kubectl get csv -n "${namespace}" "${name}" -o jsonpath="${jsonpath}" 2>/dev/null || echo "Waiting for CSV to appear")
+        local new_csv_phase=$(kubectl get csv -n "${namespace}" ${name} -o jsonpath="${jsonpath}" 2>/dev/null || echo "Waiting for CSV to appear")
         if [[ $new_csv_phase != "$csv_phase" ]]; then
             local csv_phase=$new_csv_phase
-            echo "CSV \"$name\" phase: $csv_phase"
+            echo "CSV $dispayname phase: $csv_phase"
         fi
         sleep 1
         retries=$((retries - 1))
     done
 
     if [ $retries == 0 ]; then
-        echo "CSV \"$name\" failed to reach phase succeeded"
+        echo "CSV $displayname failed to reach phase succeeded"
         exit 1
     fi
 }
