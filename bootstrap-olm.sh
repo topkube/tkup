@@ -101,7 +101,7 @@ genArgoCdConfiguration() {
     local git_username_ref=$([[ "$LC_TK_GITOPS_USERNAME" ]] && echo "usernameSecret: { name: ${secrets_name}, key: username }")
     local git_password_sec=$([[ "$LC_TK_GITOPS_PASSWORD" ]] && echo "password: $LC_TK_GITOPS_PASSWORD")
     local git_password_ref=$([[ "$LC_TK_GITOPS_PASSWORD" ]] && echo "passwordSecret: { name: ${secrets_name}, key: password }")
-    local git_priv_key_sec=$([[ "$LC_TK_GITOPS_PRIV_KEY" ]] && echo "sshPrivateKeySecret: $(echo "$LC_TK_GITOPS_PRIV_KEY" | yamlBlock $((indent_spaces + 4)) )")
+    local git_priv_key_sec=$([[ "$LC_TK_GITOPS_PRIV_KEY" ]] && echo "sshPrivateKey: $(echo "$LC_TK_GITOPS_PRIV_KEY" | yamlBlock $((indent_spaces + 4)) )")
     local git_priv_key_ref=$([[ "$LC_TK_GITOPS_PRIV_KEY" ]] && echo "sshPrivateKeySecret: { name: ${secrets_name}, key: sshPrivateKey }")
     local git_known_hosts=$( ([[ "$LC_TK_GITOPS_KNOWN_HOSTS" ]] && echo "$LC_TK_GITOPS_KNOWN_HOSTS" || echo "$DEFAULT_GIT_KNOWN_HOSTS" ) | yamlBlock $((indent_spaces + 4)) )
     cat <<EOF | sed "s/^ \{$indent_spaces\}//"
