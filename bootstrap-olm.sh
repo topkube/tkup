@@ -185,11 +185,11 @@ installArgoCd() {
     genArgoCdConfiguration $namespace | kubectl apply -f -
     # Hack - rollout status initially fails because it's called before the deployment is created
     local retries=10
-    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}"
-    until [[ $retries == 0 || $? == 0 ]]; do
+    local done=
+    until [[ $retries == 0 || $done ]]; do
+        kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" && done=yes || true
         sleep 1
         retries=$((retries - 1))
-        kubectl rollout status -w deployment/argocd-server --namespace="${namespace}"
     done
 }
 
