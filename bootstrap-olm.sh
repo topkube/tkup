@@ -183,7 +183,11 @@ installArgoCd() {
     waitForCsv $namespace
     kubectl rollout status -w deployment/argocd-operator --namespace="${namespace}"
     genArgoCdConfiguration $namespace | kubectl apply -f -
-    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}"
+    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
+    sleep 5
+    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
+    sleep 5
+    kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" || true
 }
 
 # Environment variables (names with LC_* can be passed through SSH in most default configurations)
