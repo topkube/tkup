@@ -126,10 +126,17 @@ genArgoCdConfiguration() {
           initialRepositories: |
             - url: $git_url
               type: git
+              name: core-gitops
               $git_username_ref
               $git_password_ref
               $git_priv_key_ref
           initialSSHKnownHosts: $git_known_hosts
+          repositoryCredentials: |
+            - sshPrivateKeySecret:
+                key: sshPrivateKey
+                name: $secrets_name
+              type: git
+              url: $git_url
         ---
         apiVersion: argoproj.io/v1alpha1
         kind: AppProject
