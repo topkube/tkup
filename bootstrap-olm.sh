@@ -23,20 +23,41 @@ waitForCsv() {
     fi
 }
 
+genOlmCatalogSource() {
+    local namespace=$1
+    local indent_spaces=8
+    cat <<EOF | sed "s/^ \{$indent_spaces\}//"
+        ---
+        apiVersion: operators.coreos.com/v1alpha1
+        kind: CatalogSource
+        metadata:
+          name: topkube-catalog
+          namespace: $namespace
+        spec:
+          sourceType: grpc
+          image: docker.io/topkube/catalog-server:latest
+          displayName: Custom Operators
+          publisher: topkube.com
+EOF
+}
+
 installOlm() {
     local release=${LC_TK_OLM_VERSION:-0.15.1}
     local url=https://github.com/operator-framework/operator-lifecycle-manager/releases/download/${release}
     local namespace=olm
 
+    # Install OLM
     kubectl apply -f ${url}/crds.yaml
     kubectl apply -f ${url}/olm.yaml
 
-    # wait for deployments to be ready
+    # Install custom catalog source
+    kubectl delete catalogsource operatorhubio-catalog -n $namespace
+    genOlmCatalogSource $namespace | kubectl apply -n $namespace -f -
+
+    # Wait for deployments to be ready
     kubectl rollout status -w deployment/olm-operator --namespace="${namespace}"
     kubectl rollout status -w deployment/catalog-operator --namespace="${namespace}"
-
     waitForCsv $namespace packageserver
-
     kubectl rollout status -w deployment/packageserver --namespace="${namespace}"
 }
 
@@ -66,7 +87,7 @@ genArgoCdSubscription() {
         spec:
           channel: alpha
           name: argocd-operator
-          source: operatorhubio-catalog
+          source: topkube-catalog
           sourceNamespace: olm
 EOF
 }
@@ -177,6 +198,26 @@ genArgoCdConfiguration() {
 EOF
 }
 
+genArgoCdRoleBindingFix() {
+    local namespace=$1
+    local indent_spaces=8
+    cat <<EOF | sed "s/^ \{$indent_spaces\}//"
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRoleBinding
+        metadata:
+          name: argocd-application-controller
+        roleRef:
+          apiGroup: rbac.authorization.k8s.io
+          kind: ClusterRole
+          name: cluster-admin
+          #  name: argocd-application-controller
+        subjects:
+        - kind: ServiceAccount
+          name: argocd-application-controller
+          namespace: $namespace
+EOF
+}
+
 installArgoCd() {
     local namespace=my-argocd-operator
     genArgoCdSubscription $namespace | kubectl apply -f -
@@ -187,10 +228,12 @@ installArgoCd() {
     local retries=10
     local done=
     until [[ $retries == 0 || $done ]]; do
-        kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" && done=yes || true
+        kubectl rollout status -w deployment/argocd-server --namespace="${namespace}" 2>/dev/null && done=yes || true
         sleep 1
         retries=$((retries - 1))
     done
+    # Hack - ArgoCD operator installs with limited permissions for in-cluster operations.
+    genArgoCdRoleBindingFix $namespace | kubectl apply -f -
 }
 
 # Environment variables (names with LC_* can be passed through SSH in most default configurations)
